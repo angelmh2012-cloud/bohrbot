@@ -7,4 +7,7 @@ Well, this robot has many functions as
 - Random emoji
 - quotation
 - and bot ping
+
+# Extra 
+Slack is a social network for enterprise purposes also it's APIS allows people to do apps for Slack or Discord 
   
