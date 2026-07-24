@@ -5,8 +5,10 @@ it is a bot that runs 24/7 on a Nest server, this is my second project in hack c
 Well, this robot has many functions as 
 - Weather
 - Random emoji
-- quotation
-- and bot ping
+- Quotation
+- Bot ping
+- Jokes
+- Cat Fact
 
 # Extra 
 Slack is a social network for enterprise purposes also it's APIS allows people to do apps for Slack or Discord 
