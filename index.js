@@ -1,122 +1,105 @@
 require("dotenv").config();
 const axios = require("axios");
-const qs = require("querystring");
+const { App } = require("@slack/bolt");
 
-function parseBody(body, contentType = "") {
-  if (!body) return {};
+const app = new App({
+  token: process.env.SLACK_BOT_TOKEN,
+  appToken: process.env.SLACK_APP_TOKEN,
+  socketMode: true
+});
 
-  if (typeof body === "object") return body;
+// 1. /bohrbot-ping
+app.command("/bohrbot-ping", async ({ ack, respond }) => {
+  await ack();
+  const start = Date.now();
+  const latency = Date.now() - start;
+  await respond({ text: `Pong!\nLatency: ${latency}ms` });
+});
 
-  if (contentType.includes("application/json")) {
-    return JSON.parse(body);
+// 2. /bohrbot-hello (NUEVO COMANDO)
+app.command("/bohrbot-hello", async ({ ack, respond, command }) => {
+  await ack();
+  const userName = command.user_name ? `@${command.user_name}` : "there";
+  await respond({ text: `Hi ${userName}! I'm BohrBot, and I have some commands to probe dude!` });
+});
+
+// 3. /bohrbot-catfact
+app.command("/bohrbot-catfact", async ({ ack, respond }) => {
+  await ack();
+  try {
+    const response = await axios.get("https://catfact.ninja/fact", { timeout: 2500 });
+    await respond({ text: `Cat Fact:\n${response.data.fact}` });
+  } catch (err) {
+    await respond({ text: "Failed to fetch a cat fact." });
   }
+});
 
-  const parsed = qs.parse(body);
-  if (typeof parsed.payload === "string") {
-    try {
-      return JSON.parse(parsed.payload);
-    } catch (err) {
-      return parsed;
-    }
+// 4. /bohrbot-joke
+app.command("/bohrbot-joke", async ({ ack, respond }) => {
+  await ack();
+  try {
+    const response = await axios.get("https://official-joke-api.appspot.com/random_joke", { timeout: 2500 });
+    await respond({
+      text: `${response.data.setup}\n\n${response.data.punchline}`
+    });
+  } catch (err) {
+    await respond({ text: "Failed to fetch a joke." });
   }
+});
 
-  return parsed;
-}
-
-async function buildCommandResponse(payload) {
-  const command = payload.command || "";
-  const text = (payload.text || "").trim();
-
-  switch (command) {
-    case "/bohrbot-ping": {
-      return `Pong!\nYour command was received successfully.`;
-    }
-    case "/bohrbot-catfact": {
-      try {
-        const response = await axios.get("https://catfact.ninja/fact");
-        return `Cat Fact:\n${response.data.fact}`;
-      } catch (err) {
-        return "Failed to fetch a cat fact.";
-      }
-    }
-    case "/bohrbot-joke": {
-      try {
-        const response = await axios.get("https://official-joke-api.appspot.com/random_joke");
-        return `${response.data.setup}\n\n${response.data.punchline}`;
-      } catch (err) {
-        return "Failed to fetch a joke.";
-      }
-    }
-    case "/bohrbot-quote": {
-      try {
-        const response = await axios.get("https://api.quotable.io/random");
-        return `Quote:\n"${response.data.content}" - ${response.data.author}`;
-      } catch (err) {
-        return "Failed to fetch a quote.";
-      }
-    }
-    case "/bohrbot-randomemoji": {
-      try {
-        const response = await axios.get("https://emojihub.herokuapp.com/api/random");
-        return `Random Emoji:\n${response.data.htmlCode}`;
-      } catch (err) {
-        return "Failed to fetch a random emoji.";
-      }
-    }
-    case "/bohrbot-weather": {
-      if (!text) {
-        return "Please provide a city name.";
-      }
-
-      try {
-        const apiKey = process.env.OPENWEATHER_API_KEY;
-        if (!apiKey) {
-          return "The weather API key is not configured.";
-        }
-
-        const response = await axios.get(
-          `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(text)}&appid=${apiKey}&units=metric`
-        );
-        return `Weather in ${text}:\nTemperature: ${response.data.main.temp}°C\nWeather: ${response.data.weather[0].description}`;
-      } catch (err) {
-        return "Failed to fetch weather data.";
-      }
-    }
-    default:
-      return `Unknown command: ${command}`;
+// 5. /bohrbot-quote
+app.command("/bohrbot-quote", async ({ ack, respond }) => {
+  await ack();
+  try {
+    const response = await axios.get("https://api.quotable.io/random", { timeout: 2500 });
+    await respond({ text: `Quote:\n"${response.data.content}" - ${response.data.author}` }); 
+  } catch (err) {
+    await respond({ text: "Failed to fetch a quote (API might be down)." });
   }
-}
+});
 
-async function handleSlashCommand(req, res) {
-  let body = "";
-
-  for await (const chunk of req) {
-    body += chunk.toString();
+// 6. /bohrbot-randomemoji
+app.command("/bohrbot-randomemoji", async ({ ack, respond }) => {
+  await ack();
+  try {
+    const response = await axios.get("https://emojihub.herokuapp.com/api/random", { timeout: 2500 });
+    await respond({ text: `Random Emoji:\n${response.data.htmlCode}` });
+  } catch (err) {
+    await respond({ text: "Failed to fetch a random emoji." });
   }
+});
 
-  const payload = parseBody(body, req.headers["content-type"] || "");
-  const command = payload.command || "";
-
-  if (!command) {
-    res.status(400).send("Missing Slack command payload");
+// 7. /bohrbot-weather
+app.command("/bohrbot-weather", async ({ ack, respond, command }) => {
+  await ack();
+  const city = command.text.trim();
+  
+  if (!city) {
+    await respond({ text: "Please provide a city name (e.g. `/bohrbot-weather London`)." });
     return;
   }
 
-  const responseText = await buildCommandResponse(payload);
-
-  if (payload.response_url) {
-    try {
-      await axios.post(payload.response_url, { text: responseText });
-    } catch (err) {
-      console.error("Failed to send Slack response:", err.message);
+  try {
+    const apiKey = process.env.OPENWEATHER_API_KEY;
+    if (!apiKey) {
+      await respond({ text: "API Key for OpenWeather is missing in .env file." });
+      return;
     }
+
+    const response = await axios.get(
+      `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`,
+      { timeout: 2500 }
+    );
+    await respond({
+      text: `Weather in ${city}:\nTemperature: ${response.data.main.temp}°C\nWeather: ${response.data.weather[0].description}`
+    });
+  } catch (err) {
+    await respond({ text: "Failed to fetch weather data. Check city name or API Key." });
   }
+});
 
-  res.status(200).send("");
-}
-
-module.exports = {
-  handleSlashCommand,
-  buildCommandResponse
-};
-
+// INICIAR EL BOT (Siempre al final)
+(async () => {
+  await app.start();
+  console.log("bot is running!");
+})();
