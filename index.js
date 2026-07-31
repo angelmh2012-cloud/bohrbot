@@ -1,25 +1,26 @@
 require("dotenv").config();
 const axios = require("axios");
+const { App, ExpressReceiver } = require("@slack/bolt");
 
-const { App } = require("@slack/bolt");
+const receiver = new ExpressReceiver({
+  signingSecret: process.env.SLACK_SIGNING_SECRET,
+  endpoints: "/slack/events",
+  port: Number(process.env.PORT || 3000)
+});
 
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
-  appToken: process.env.SLACK_APP_TOKEN,
-  socketMode: true
+  receiver,
+  signingSecret: process.env.SLACK_SIGNING_SECRET
 });
 
-app.command("/bohrbot-ping", async ({ command, ack, respond }) => {
-  const start = Date.now();
+app.command("/bohrbot-ping", async ({ ack, respond }) => {
   await ack();
+  const start = Date.now();
   const latency = Date.now() - start;
   await respond({ text: `Pong!\nLatency: ${latency}ms` });
 });
 
-(async () => {
-  await app.start();
-  console.log("bot is running!");
-})();
 app.command("/bohrbot-catfact", async ({ ack, respond }) => {
   await ack();
 
@@ -30,31 +31,31 @@ app.command("/bohrbot-catfact", async ({ ack, respond }) => {
     await respond({ text: "Failed to fetch a cat fact." });
   }
 });
+
 app.command("/bohrbot-joke", async ({ ack, respond }) => {
   await ack();
 
   try {
     const response = await axios.get("https://official-joke-api.appspot.com/random_joke");
     await respond({
-      text:
-`${response.data.setup}
-
-${response.data.punchline}`
+      text: `${response.data.setup}\n\n${response.data.punchline}`
     });
   } catch (err) {
     await respond({ text: "Failed to fetch a joke." });
   }
 });
+
 app.command("/bohrbot-quote", async ({ ack, respond }) => {
   await ack();
 
   try {
     const response = await axios.get("https://api.quotable.io/random");
-    await respond({        text: `Quote:\n"${response.data.content}" - ${response.data.author}` }); 
-    } catch (err) {
+    await respond({ text: `Quote:\n"${response.data.content}" - ${response.data.author}` });
+  } catch (err) {
     await respond({ text: "Failed to fetch a quote." });
-    }
+  }
 });
+
 app.command("/bohrbot-randomemoji", async ({ ack, respond }) => {
   await ack();
 
@@ -65,10 +66,11 @@ app.command("/bohrbot-randomemoji", async ({ ack, respond }) => {
     await respond({ text: "Failed to fetch a random emoji." });
   }
 });
+
 app.command("/bohrbot-weather", async ({ ack, respond, command }) => {
   await ack();
 
-  const city = command.text.trim();
+  const city = (command.text || "").trim();
   if (!city) {
     await respond({ text: "Please provide a city name." });
     return;
@@ -76,6 +78,11 @@ app.command("/bohrbot-weather", async ({ ack, respond, command }) => {
 
   try {
     const apiKey = process.env.OPENWEATHER_API_KEY;
+    if (!apiKey) {
+      await respond({ text: "The weather API key is not configured." });
+      return;
+    }
+
     const response = await axios.get(
       `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`
     );
@@ -85,6 +92,15 @@ app.command("/bohrbot-weather", async ({ ack, respond, command }) => {
   } catch (err) {
     await respond({ text: "Failed to fetch weather data." });
   }
+});
+
+(async () => {
+  try {
+    await app.start();
+    console.log("bot is running!");
+  } catch (err) {
+    console.error("Failed to start Slack app:", err);
+    process.exit(1);
   }
-    );  
-    
+})();
+
