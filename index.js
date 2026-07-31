@@ -55,4 +55,36 @@ app.command("/bohrbot-quote", async ({ ack, respond }) => {
     await respond({ text: "Failed to fetch a quote." });
     }
 });
+app.command("/bohrbot-randomemoji", async ({ ack, respond }) => {
+  await ack();
 
+  try {
+    const response = await axios.get("https://emojihub.herokuapp.com/api/random");
+    await respond({ text: `Random Emoji:\n${response.data.htmlCode}` });
+  } catch (err) {
+    await respond({ text: "Failed to fetch a random emoji." });
+  }
+});
+app.command("/bohrbot-weather", async ({ ack, respond, command }) => {
+  await ack();
+
+  const city = command.text.trim();
+  if (!city) {
+    await respond({ text: "Please provide a city name." });
+    return;
+  }
+
+  try {
+    const apiKey = process.env.OPENWEATHER_API_KEY;
+    const response = await axios.get(
+      `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`
+    );
+    await respond({
+      text: `Weather in ${city}:\nTemperature: ${response.data.main.temp}°C\nWeather: ${response.data.weather[0].description}`
+    });
+  } catch (err) {
+    await respond({ text: "Failed to fetch weather data." });
+  }
+  }
+    );  
+    
