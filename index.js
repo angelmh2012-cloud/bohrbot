@@ -16,14 +16,14 @@ app.command("/bohrbot-ping", async ({ ack, respond }) => {
   await respond({ text: `Pong!\nLatency: ${latency}ms` });
 });
 
-// 2. /bohrbot-hello (NUEVO COMANDO)
+
 app.command("/bohrbot-hello", async ({ ack, respond, command }) => {
   await ack();
   const userName = command.user_name ? `@${command.user_name}` : "there";
   await respond({ text: `Hi ${userName}! I'm BohrBot, and I have some commands to probe dude!` });
 });
 
-// 3. /bohrbot-catfact
+
 app.command("/bohrbot-catfact", async ({ ack, respond }) => {
   await ack();
   try {
@@ -34,7 +34,7 @@ app.command("/bohrbot-catfact", async ({ ack, respond }) => {
   }
 });
 
-// 4. /bohrbot-joke
+
 app.command("/bohrbot-joke", async ({ ack, respond }) => {
   await ack();
   try {
@@ -47,7 +47,7 @@ app.command("/bohrbot-joke", async ({ ack, respond }) => {
   }
 });
 
-// 5. /bohrbot-quote
+
 app.command("/bohrbot-quote", async ({ ack, respond }) => {
   await ack();
   try {
@@ -58,7 +58,7 @@ app.command("/bohrbot-quote", async ({ ack, respond }) => {
   }
 });
 
-// 6. /bohrbot-randomemoji
+
 app.command("/bohrbot-randomemoji", async ({ ack, respond }) => {
   await ack();
   try {
@@ -69,7 +69,7 @@ app.command("/bohrbot-randomemoji", async ({ ack, respond }) => {
   }
 });
 
-// 7. /bohrbot-weather
+
 app.command("/bohrbot-weather", async ({ ack, respond, command }) => {
   await ack();
   const city = command.text.trim();
@@ -98,7 +98,6 @@ app.command("/bohrbot-weather", async ({ ack, respond, command }) => {
   }
 });
 
-// INICIAR EL BOT (Siempre al final)
 (async () => {
   await app.start();
   console.log("bot is running!");
