@@ -99,7 +99,7 @@ app.command("/bohrbot-pizzastatus", async ({ ack, respond, command }) => {
     return;
   }
   try {
-    const response = await axios.get(`https://status.pizza/${encodeURIComponent(status)}`, { timeout: 5000, responseType: 'text' });
+    const response = await axios.get(`https://status.pizza/${encodeURIComponent(status)}.json`, { timeout: 5000, responseType: 'text' });
     const html = response.data || '';
 
     // extract first image src from HTML
