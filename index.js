@@ -91,31 +91,6 @@ app.command("/bohrbot-chucknorris", async ({ ack, respond }) => {
   }
 });
 
-app.command("/bohrbot-pizzastatus", async ({ ack, respond, command }) => {
-  await ack();
-  const status = (command && command.text) ? command.text.trim() : "";
-  if (!status) {
-    await respond({ text: "Please provide a pizza status (e.g. `/bohrbot-pizzastatus 404`)." });
-    return;
-  }
-  try {
-    const response = await axios.get(`https://status.pizza/${encodeURIComponent(status)}`, { timeout: 5000});
-    const html = response.data || '';
-
-    const imageUrl = `https://status.pizza/${status}`;
-
-    const blocks = [];
-    blocks.push({ type: 'section', text: { type: 'mrkdwn', text: `*Pizza Status:* ${status}` } });
-    blocks.push({ type: 'image', image_url: imageUrl, alt_text: 'pizza status' });
-
-    const fallbackText = `Pizza status for ${status}`;
-    await respond({ text: fallbackText, blocks });
-  } catch (err) {
-    console.error('pizza status error:', err && err.message ? err.message : err);
-    await respond({ text: 'Failed to fetch pizza status.' });
-  }
-});
-
 
 app.command("/bohrbot-weather", async ({ ack, respond, command }) => {
   await ack();
