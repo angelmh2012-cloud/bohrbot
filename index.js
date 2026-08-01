@@ -99,7 +99,7 @@ app.command("/bohrbot-pizzastatus", async ({ ack, respond, command }) => {
     return;
   }
   try {
-    const response = await axios.get(`https://status.pizza/${encodeURIComponent(status)}.json`, { timeout: 5000, responseType: 'text' });
+    const response = await axios.get(`https://status.pizza/${encodeURIComponent(status)}`, { timeout: 5000});
     const html = response.data || '';
 
     let imageUrl = status;
@@ -118,7 +118,6 @@ app.command("/bohrbot-pizzastatus", async ({ ack, respond, command }) => {
     if (!title && h1Match && h1Match[1]) title = h1Match[1].trim();
 
     const blocks = [];
-    // Always include a text section so Slack shows something even when only an image exists
     const safeStatus = encodeURIComponent(status);
     const headerText = title
       ? `*Pizza Status:* ${title}`
