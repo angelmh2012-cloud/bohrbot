@@ -102,8 +102,7 @@ app.command("/bohrbot-pizzastatus", async ({ ack, respond, command }) => {
     const response = await axios.get(`https://status.pizza/${encodeURIComponent(status)}.json`, { timeout: 5000, responseType: 'text' });
     const html = response.data || '';
 
-    // extract first image src from HTML
-    let imageUrl = null;
+    let imageUrl = status;
     const imgMatch = html.match(/<img[^>]+src=["']?([^"' >]+)/i);
     if (imgMatch && imgMatch[1]) {
       imageUrl = imgMatch[1];
@@ -119,15 +118,18 @@ app.command("/bohrbot-pizzastatus", async ({ ack, respond, command }) => {
     if (!title && h1Match && h1Match[1]) title = h1Match[1].trim();
 
     const blocks = [];
-    if (title) {
-      blocks.push({ type: 'section', text: { type: 'mrkdwn', text: `*Pizza Status:* ${title}` } });
-    }
+    // Always include a text section so Slack shows something even when only an image exists
+    const safeStatus = encodeURIComponent(status);
+    const headerText = title
+      ? `*Pizza Status:* ${title}`
+      : `*Pizza Status:* ${status} — <https://status.pizza/${safeStatus}|view>`;
+    blocks.push({ type: 'section', text: { type: 'mrkdwn', text: headerText } });
     if (imageUrl) {
       blocks.push({ type: 'image', image_url: imageUrl, alt_text: title || 'pizza status' });
     }
 
     const fallbackText = title || `Pizza status for ${status}`;
-    await respond({ text: fallbackText, blocks: blocks.length ? blocks : undefined });
+    await respond({ text: fallbackText, blocks });
   } catch (err) {
     console.error('pizza status error:', err && err.message ? err.message : err);
     await respond({ text: 'Failed to fetch pizza status.' });
