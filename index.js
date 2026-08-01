@@ -102,12 +102,11 @@ app.command("/bohrbot-pizzastatus", async ({ ack, respond, command }) => {
     const response = await axios.get(`https://status.pizza/${encodeURIComponent(status)}`, { timeout: 5000});
     const html = response.data || '';
 
-    let imageUrl = status;
+    let imageUrl = null;
     const imgMatch = html.match(/<img[^>]+src=["']?([^"' >]+)/i);
     if (imgMatch && imgMatch[1]) {
       imageUrl = imgMatch[1];
-      if (imageUrl.startsWith('//')) imageUrl = 'https:' + imageUrl;
-      else if (imageUrl.startsWith('/')) imageUrl = 'https://status.pizza' + imageUrl;
+   imageUrl = 'https://status.pizza/' + status;
     }
 
     // extract title or header as text
