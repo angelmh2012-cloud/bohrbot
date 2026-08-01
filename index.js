@@ -102,29 +102,13 @@ app.command("/bohrbot-pizzastatus", async ({ ack, respond, command }) => {
     const response = await axios.get(`https://status.pizza/${encodeURIComponent(status)}`, { timeout: 5000});
     const html = response.data || '';
 
-    let imageUrl = null;
-    const imgMatch = html.match(/<img[^>]+src=["']?([^"' >]+)/i);
-    if (imgMatch && imgMatch[1]) {
-      imageUrl = imgMatch[1];
-   imageUrl = 'https://status.pizza/' + status;
-    }
-
-    // extract title or header as text
-    let title = null;
-    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-    if (titleMatch && titleMatch[1]) title = titleMatch[1].trim();
-    const h1Match = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
-    if (!title && h1Match && h1Match[1]) title = h1Match[1].trim();
+    const imageUrl = `https://status.pizza/${status}`;
 
     const blocks = [];
-    const headerText = title
-      ? `*Pizza Status:* ${title}`
-      : `*Pizza Status:* ${status}`;
-    if (imageUrl) {
-      blocks.push({ type: 'image', image_url: imageUrl, alt_text: title || 'pizza status' });
-    }
+    blocks.push({ type: 'section', text: { type: 'mrkdwn', text: `*Pizza Status:* ${status}` } });
+    blocks.push({ type: 'image', image_url: imageUrl, alt_text: 'pizza status' });
 
-    const fallbackText = title || `Pizza status for ${status}`;
+    const fallbackText = `Pizza status for ${status}`;
     await respond({ text: fallbackText, blocks });
   } catch (err) {
     console.error('pizza status error:', err && err.message ? err.message : err);
