@@ -117,11 +117,9 @@ app.command("/bohrbot-pizzastatus", async ({ ack, respond, command }) => {
     if (!title && h1Match && h1Match[1]) title = h1Match[1].trim();
 
     const blocks = [];
-    const safeStatus = encodeURIComponent(status);
     const headerText = title
       ? `*Pizza Status:* ${title}`
-      : `*Pizza Status:* ${status} — <https://status.pizza/${safeStatus}|view>`;
-    blocks.push({ type: 'section', text: { type: 'mrkdwn', text: headerText } });
+      : `*Pizza Status:* ${status}`;
     if (imageUrl) {
       blocks.push({ type: 'image', image_url: imageUrl, alt_text: title || 'pizza status' });
     }
