@@ -48,24 +48,44 @@ app.command("/bohrbot-joke", async ({ ack, respond }) => {
 });
 
 
-app.command("/bohrbot-quote", async ({ ack, respond }) => {
+app.command("/bohrbot-randomspacefact", async ({ ack, respond }) => {
   await ack();
+  const celestialObject = command.text.trim();
+  if (!celestialObject) {
+    await respond({ text: "Please provide a celestial object (e.g. `/bohrbot-randomspacefact Mars`)." });
+    return;
+  }
   try {
-    const response = await axios.get("https://api.quotable.io/random", { timeout: 2500 });
-    await respond({ text: `Quote:\n"${response.data.content}" - ${response.data.author}` }); 
+    const response = await axios.get(`https://api.bootprint.space/all/${celestialObject}`, { timeout: 2500 });
+    await respond({ text: `Space Fact:\n${response.data.title}` }); 
   } catch (err) {
-    await respond({ text: "Failed to fetch a quote (API might be down)." });
+    await respond({ text: "Failed to fetch a space fact (API might be down)." });
   }
 });
 
 
-app.command("/bohrbot-randomemoji", async ({ ack, respond }) => {
+app.command("/bohrbot-chucknorris", async ({ ack, respond }) => {
   await ack();
   try {
-    const response = await axios.get("https://emojihub.herokuapp.com/api/random", { timeout: 2500 });
-    await respond({ text: `Random Emoji:\n${response.data.htmlCode}` });
+    const response = await axios.get("https://api.chucknorris.io/jokes/random", { timeout: 2500 });
+    await respond({ text: `Chuck Norris Fact:\n${response.data.value}` });
   } catch (err) {
-    await respond({ text: "Failed to fetch a random emoji." });
+    await respond({ text: "Failed to fetch a Chuck Norris fact." });
+  }
+});
+
+app.command("/bohrbot-pizzastatus", async ({ ack, respond }) => {
+  await ack();
+  const status = command.text.trim();
+  if (!status) {
+    await respond({ text: "Please provide a pizza status (e.g. `/bohrbot-pizzastatus 404`)." });
+    return;
+  }
+  try {
+    const response = await axios.get(`https://status.pizza/${status}`, { timeout: 2500 });
+    await respond({ text: `Pizza Status:\n${response.data.status}` });
+  } catch (err) {
+    await respond({ text: "Failed to fetch pizza status." });
   }
 });
 
