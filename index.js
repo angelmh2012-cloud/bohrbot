@@ -48,16 +48,33 @@ app.command("/bohrbot-joke", async ({ ack, respond }) => {
 });
 
 
-app.command("/bohrbot-randomspacefact", async ({ ack, respond }) => {
+app.command("/bohrbot-randomspacefact", async ({ ack, respond, command }) => {
   await ack();
-  const celestialObject = command.text.trim();
+  const celestialObject = (command && command.text) ? command.text.trim() : "";
   if (!celestialObject) {
     await respond({ text: "Please provide a celestial object (e.g. `/bohrbot-randomspacefact Mars`)." });
     return;
   }
   try {
-    const response = await axios.get(`https://api.bootprint.space/all/${celestialObject}`, { timeout: 2500 });
-    await respond({ text: `Space Fact:\n${response.data.title}` }); 
+    const response = await axios.get(`https://api.bootprint.space/all/${encodeURIComponent(celestialObject)}`, { timeout: 2500 });
+    const data = response.data || {};
+    const title = data.title || data.object || celestialObject;
+    const fact = data.fact || data.description || data.text || "";
+    // try multiple common keys for images
+    const imageUrl = data.image || data.image_url || (Array.isArray(data.images) && data.images[0]) || null;
+
+    const blocks = [];
+    if (title || fact) {
+      const text = (fact ? `*${title}*\n${fact}` : `*${title}*`);
+      blocks.push({ type: "section", text: { type: "mrkdwn", text } });
+    }
+    if (imageUrl) {
+      blocks.push({ type: "image", image_url: imageUrl, alt_text: title || "image" });
+    }
+
+    // Provide a fallback `text` for clients that don't render blocks
+    const fallbackText = `${title}${fact ? ' - ' + fact : ''}`;
+    await respond({ text: fallbackText, blocks });
   } catch (err) {
     await respond({ text: "Failed to fetch a space fact (API might be down)." });
   }
@@ -74,18 +91,46 @@ app.command("/bohrbot-chucknorris", async ({ ack, respond }) => {
   }
 });
 
-app.command("/bohrbot-pizzastatus", async ({ ack, respond }) => {
+app.command("/bohrbot-pizzastatus", async ({ ack, respond, command }) => {
   await ack();
-  const status = command.text.trim();
+  const status = (command && command.text) ? command.text.trim() : "";
   if (!status) {
     await respond({ text: "Please provide a pizza status (e.g. `/bohrbot-pizzastatus 404`)." });
     return;
   }
   try {
-    const response = await axios.get(`https://status.pizza/${status}`, { timeout: 2500 });
-    await respond({ text: `Pizza Status:\n${response.data.status}` });
+    const response = await axios.get(`https://status.pizza/${encodeURIComponent(status)}`, { timeout: 5000, responseType: 'text' });
+    const html = response.data || '';
+
+    // extract first image src from HTML
+    let imageUrl = null;
+    const imgMatch = html.match(/<img[^>]+src=["']?([^"' >]+)/i);
+    if (imgMatch && imgMatch[1]) {
+      imageUrl = imgMatch[1];
+      if (imageUrl.startsWith('//')) imageUrl = 'https:' + imageUrl;
+      else if (imageUrl.startsWith('/')) imageUrl = 'https://status.pizza' + imageUrl;
+    }
+
+    // extract title or header as text
+    let title = null;
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    if (titleMatch && titleMatch[1]) title = titleMatch[1].trim();
+    const h1Match = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+    if (!title && h1Match && h1Match[1]) title = h1Match[1].trim();
+
+    const blocks = [];
+    if (title) {
+      blocks.push({ type: 'section', text: { type: 'mrkdwn', text: `*Pizza Status:* ${title}` } });
+    }
+    if (imageUrl) {
+      blocks.push({ type: 'image', image_url: imageUrl, alt_text: title || 'pizza status' });
+    }
+
+    const fallbackText = title || `Pizza status for ${status}`;
+    await respond({ text: fallbackText, blocks: blocks.length ? blocks : undefined });
   } catch (err) {
-    await respond({ text: "Failed to fetch pizza status." });
+    console.error('pizza status error:', err && err.message ? err.message : err);
+    await respond({ text: 'Failed to fetch pizza status.' });
   }
 });
 
