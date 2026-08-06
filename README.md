@@ -5,7 +5,7 @@ it is a bot that runs 24/7 on a Nest server, this is my second project in hack c
 
 # Functions
 Well, this robot has many functions as 
-- Weather (/bohrbot-wheather): Introduce your city and an API would tell you the weather 
+- Weather (/bohrbot-weather): Introduce your city and an API would tell you the weather 
 - Facts about chuck Norris(/bohrbot-chucknorris): Probe it!
 - Bot ping(/bohrbot-ping): That's to check if the bot in the server is running 
 - Jokes(/bohrbot-joke): Tells you a bad joke 
